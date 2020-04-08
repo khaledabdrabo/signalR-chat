@@ -1,0 +1,328 @@
+﻿<!------ Include the above in your HEAD tag ---------->
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Chat</title>
+    <script src="~/signalr/signalr.js"></script>
+
+    <link href="~/css/chat.css" rel="stylesheet" />
+    <script src="~/js/chatJS.js"></script>
+    @*<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">*@
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.5.0/css/all.css" integrity="sha384-B4dIYHKNBt8Bc12p+WXckhzcICo0wtJAoU8YZTY5qE0Id1GSseTk6S+L3BlXeVIU" crossorigin="anonymous">
+    @*<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>*@
+    <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/malihu-custom-scrollbar-plugin/3.1.5/jquery.mCustomScrollbar.min.css">
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/malihu-custom-scrollbar-plugin/3.1.5/jquery.mCustomScrollbar.min.js"></script>
+</head>
+<!--Coded With Love By Mutiullah Samim-->
+<body>
+   
+    
+
+    <div class="container-fluid h-100">
+        <div class="row justify-content-center h-100">
+            <div class="col-md-4 col-xl-3 chat">
+                <div class="card mb-sm-3 mb-md-0 contacts_card">
+                    <div class="card-header">
+                        <div class="input-group">
+                            <input type="text" placeholder="Search..." name="" class="form-control search">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text search_btn"><i class="fas fa-search"></i></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body contacts_body">
+                        <ui class="contacts">
+                            @if (ViewBag.friends != null)
+                            {
+                                @foreach (var item in ViewBag.friends)
+                                {
+                                    @if (item.active == true)
+                                    {<a href="#" onclick="openWindow('@item.user.UserName','@item.user.image','@item.active','@item.user.Id')">
+                                         <li class="active">
+                                             <div class="d-flex bd-highlight">
+                                                 <div class="img_cont">
+                                                     <img src="~/images/@item.user.image" class="rounded-circle user_img">
+                                                     <span id="@item.user.UserName" class="online_icon"></span>
+                                                 </div>
+                                                 <div class="user_info">
+                                                     <span>@item.user.UserName </span>
+                                                     <p>@item.user.UserName is online</p>
+                                                 </div>
+                                             </div>
+                                         </li>
+                                     </a>
+
+                                    }
+                                    else
+                                    {<a href="#" onclick="openWindow('@item.user.UserName','@item.user.image','@item.active','@item.user.Id')">
+                                         <li>
+                                             <div class="d-flex bd-highlight">
+                                                 <div class="img_cont">
+                                                     <img src="~/images/@item.user.image" class="rounded-circle user_img">
+                                                     <span id="@item.user.UserName" class="online_icon offline"></span>
+                                                 </div>
+                                                 <div class="user_info">
+                                                     <span>@item.user.UserName</span>
+                                                     <p>@item.user.UserName is offline</p>
+                                                 </div>
+                                             </div>
+                                         </li>
+                                   </a>
+    }
+
+
+    }
+    }
+
+</ui>
+                    </div>
+                    <div class="card-footer"></div>
+                </div>
+            </div>
+            <div class="col-md-8 col-xl-9 chat" id="chat">
+                <div class="card">
+                    <div class="card-header msg_head" >
+                        <div class="d-flex bd-highlight">
+                            <div class="img_cont">
+                                <img id="friendImg" src="~/images/img_184513.png" class="rounded-circle user_img">
+                                <span id="state" class=""></span>
+                            </div>
+                            <div class="user_info">
+                                <span  id="friendName">Select  your friend</span>
+                                <p id="friendNumOfMessage">1767 Messages</p>
+                            </div>
+                            <div class="video_cam">
+                                <span><i class="fas fa-video"></i></span>
+                                <span><i class="fas fa-phone"></i></span>
+                            </div>
+                        </div>
+                        <span id="action_menu_btn"><i class="fas fa-ellipsis-v"></i></span>
+                        <div class="action_menu">
+                            <ul>
+                                <li><i class="fas fa-user-circle"></i> View profile</li>
+                                <li><i class="fas fa-users"></i> Add to close friends</li>
+                                <li><i class="fas fa-plus"></i> Add to group</li>
+                                <li><i class="fas fa-ban"></i> Block</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="card-body msg_card_body" id="messageContainer">
+                        
+                        
+                    </div>
+                    <div class="card-footer">
+                        <div class="input-group">
+                            <div class="input-group-append">
+                                <span class="input-group-text attach_btn"><i class="fas fa-paperclip"></i></span>
+                            </div>
+                            <textarea id="InputMessage" name="" class="form-control type_msg" placeholder="Type your message..."></textarea>
+                            <div id="sendButton" class="input-group-append">
+                                <span  class="input-group-text send_btn"><i class="fas fa-location-arrow"></i></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+<script>
+    var AllMessage = [];
+    var CurrentImage = "", Currentid = "",userName="";
+    var contactID = "", contactImage = "";
+    var frindName = "";
+    var connection = new signalR.HubConnectionBuilder().withUrl("/chatHub").build();
+    $.get("/Home/GetCurrentUser", async = false, function (data, status) {
+        
+        CurrentImage = data.image;
+        Currentid = data.id;
+        userName = data.userName;
+            
+    })
+           
+      
+    function openWindow(name, image, status,id) {
+        
+        contactImage = image;
+        contactID = id;
+        frindName = name;
+        if (status == 'false') {
+            
+            
+            $("#state").addClass("online_icon offline")
+        } else {
+            
+            $("#state").removeClass("offline");
+        }
+        
+        $("#friendImg").attr("src", "images/" + image);
+        $("#friendName").text(name)
+
+
+
+        $.ajax({
+            url: "/Home/RetrieveAllMessage",
+            type: "POST",
+            dataType: "json",
+            data: { currentUser: userName, friendName: frindName, currentID: contactID, frienID: Currentid },
+            success: function (data) {
+
+                AllMessage = data
+                $("#messageContainer").empty();
+
+
+
+                if (data != null) {
+                    for (var i = 0; i < data.length; i++) {
+                        debugger
+                        if (AllMessage[i].userName != userName) {
+
+                            $("#messageContainer").append(`<div class="d-flex justify-content-end mb-4">
+                            <div class="msg_cotainer_send">
+                                ${AllMessage[i].text}
+                                <span class="msg_time_send">${formatAMPM(new Date)}</span >
+                            </div>
+                            <div class="img_cont_msg">
+                                <img src="images/${CurrentImage}" class="rounded-circle user_img_msg">
+                            </div>
+                        </div>`)
+                        }
+                        else {
+                            $("#messageContainer").append(` <div class="d-flex justify-content-start mb-4">
+                            <div class="img_cont_msg">
+                                <img src="images/${contactImage}" class="rounded-circle user_img_msg">
+                            </div>
+                            <div class="msg_cotainer">
+                                ${AllMessage[i].text}
+                                <span class="msg_time">${formatAMPM(new Date)}</span>
+                            </div>
+                        </div>`)
+                        }
+
+                    }
+                }
+            },
+
+
+        }).then(data => console.log(data))
+        console.log(AllMessage)
+        
+
+
+    }
+
+
+    connection.on("ReceiveMessage", function (user, message) {
+    
+        $("#messageContainer").append(` <div class="d-flex justify-content-start mb-4">
+                            <div class="img_cont_msg">
+                                <img src="images/${contactImage}" class="rounded-circle user_img_msg">
+                            </div>
+                            <div class="msg_cotainer">
+                                ${message}
+                                <span class="msg_time">${formatAMPM(new Date)}</span>
+                            </div>
+                        </div>`)
+    });
+    connection.on("SendAction", function (sender, action) {
+        if (sender!=null & action == true ) {
+            
+            $("#" + sender).removeClass("offline");
+
+        } else {
+            
+            $("#" + sender).addClass("online_icon offline")
+        }
+        connection.on("ReceiveStatus", function (user, state) {
+            
+            console.log(state)
+            
+        })
+       
+        $.ajax({
+            url: "/Home/setState",
+            type: "POST",
+            dataType: "json",
+            data: { name: sender, state: action },
+            success: function (data) {
+
+
+                connection.invoke("SendStatus", action).catch(function (err) {
+                    return console.error(err.toString());
+                });
+
+            },
+            
+
+        }).then(data => console.log(data))
+        debugger
+    });
+
+        connection.start().then(function () {
+        connection.invoke('getConnectionId')
+            .then(function (connectionId) {
+                debugger
+                sessionStorage.setItem('conectionId', connectionId);
+                // Send the connectionId to controller
+            }).catch(err => console.error(err.toString()));;
+
+    
+}).catch(function (err) {
+    return console.error(err.toString());
+});
+
+    document.getElementById("sendButton").addEventListener("click", function (event) {
+   
+        var message = document.getElementById("InputMessage").value;
+        
+        $("#messageContainer").append(`<div class="d-flex justify-content-end mb-4">
+                            <div class="msg_cotainer_send">
+                                ${message}
+                                <span class="msg_time_send">${formatAMPM(new Date)}</span >
+                            </div>
+                            <div class="img_cont_msg">
+                                <img src="images/${CurrentImage}" class="rounded-circle user_img_msg">
+                            </div>
+                        </div>`)
+        
+        var connectionId = sessionStorage.getItem('conectionId');
+        $.ajax({
+            url: "/Home/SaveMessage",
+            type: "POST",
+            dataType: "json",
+            data: { message: message, recieverName: frindName,when:formatAMPM(new Date),recieverID:Currentid,senderID:contactID },
+            success: function (data) {
+
+                connection.invoke("SendStatus", action).catch(function (err) {
+                    return console.error(err.toString());
+                });
+
+            },
+            
+
+        }).then(data => console.log(data))
+
+
+        connection.invoke("SendMessage", frindName, message).catch(function (err) {
+            return console.error(err.toString());
+        });
+        document.getElementById("InputMessage").value = "";
+        event.preventDefault();
+    });
+
+    function formatAMPM(date) {
+        var hours = date.getHours();
+        var minutes = date.getMinutes();
+        var ampm = hours >= 12 ? 'pm' : 'am';
+        hours = hours % 12;
+        hours = hours ? hours : 12; // the hour '0' should be '12'
+        minutes = minutes < 10 ? '0' + minutes : minutes;
+        var strTime = hours + ':' + minutes + ' ' + ampm;
+        return strTime;
+}
+   
+</script>
+
+
